@@ -1,5 +1,5 @@
--- ✅ Aim Lock Ultimate (Mobile + PC + Delta)
--- 100% compatível com Delta | Botão móvel | Travamento total
+-- ✅ Aim Lock Supreme (Delta + Mobile + PC)
+-- Travamento automático no mais próximo, troca ao morrer e ao chegar perto
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -12,7 +12,9 @@ local aimPart = "HumanoidRootPart"
 local dragging = false
 local dragStart, startPos
 
--- 🔍 Função para pegar o player mais próximo
+--------------------------------------------------------
+-- 🔍 Função para pegar o player mais próximo do jogador
+--------------------------------------------------------
 local function getClosestPlayer()
     local closestPlayer
     local shortestDistance = math.huge
@@ -30,26 +32,43 @@ local function getClosestPlayer()
             end
         end
     end
-    return closestPlayer
+    return closestPlayer, shortestDistance
 end
 
--- 🎯 Travar a mira com força máxima
+--------------------------------------------------------
+-- 🎯 Travar a câmera no inimigo mais próximo
+--------------------------------------------------------
 RunService.RenderStepped:Connect(function()
     if aimLockEnabled then
-        if not target or not target.Character or not target.Character:FindFirstChild(aimPart) 
+        -- Atualiza se o alvo morrer ou sumir
+        if not target or not target.Character or not target.Character:FindFirstChild(aimPart)
         or target.Character:FindFirstChildOfClass("Humanoid").Health <= 0 then
             target = getClosestPlayer()
+        else
+            -- Verifica se existe alguém mais próximo do que o alvo atual
+            local closestPlayer, closestDist = getClosestPlayer()
+            if closestPlayer and target and closestPlayer ~= target then
+                local targetPos = target.Character:FindFirstChild(aimPart).Position
+                local targetDist = (Camera.CFrame.Position - targetPos).Magnitude
+
+                -- Se alguém chega mais perto que o alvo atual, troca o alvo
+                if closestDist + 1 < targetDist then
+                    target = closestPlayer
+                end
+            end
         end
 
+        -- Mantém a mira 100% fixa
         if target and target.Character and target.Character:FindFirstChild(aimPart) then
-            local targetPos = target.Character[aimPart].Position
-            -- Travamento super fixo (99999%)
-            Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetPos)
+            local pos = target.Character[aimPart].Position
+            Camera.CFrame = CFrame.new(Camera.CFrame.Position, pos)
         end
     end
 end)
 
--- 📱 Criar botão móvel na tela (usando gethui pro Delta)
+--------------------------------------------------------
+-- 📱 Criar botão móvel (Delta compatível)
+--------------------------------------------------------
 local function createMovableButton()
     local guiParent = (gethui and gethui()) or game:GetService("CoreGui")
 
@@ -70,7 +89,6 @@ local function createMovableButton()
     Button.BorderSizePixel = 2
     Button.BackgroundTransparency = 0.1
     Button.Active = true
-    Button.Draggable = false -- faremos manualmente o arraste
 
     -- 🔒 Ativar/desativar AimLock
     Button.MouseButton1Click:Connect(function()
@@ -86,7 +104,7 @@ local function createMovableButton()
         end
     end)
 
-    -- 🖐️ Sistema de arrastar o botão
+    -- 🖐️ Sistema de arrastar o botão (mobile)
     local UserInputService = game:GetService("UserInputService")
 
     Button.InputBegan:Connect(function(input)
@@ -111,5 +129,7 @@ local function createMovableButton()
     end)
 end
 
--- 🚀 Executar
+--------------------------------------------------------
+-- 🚀 Executar o botão
+--------------------------------------------------------
 createMovableButton()
